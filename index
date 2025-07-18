@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Hedge Calculator - Smart Protection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --dark-bg: #0a0e27;
+            --dark-surface: #151a35;
+            --dark-surface-2: #1e2444;
+            --dark-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a9c9;
+            --accent-green: #00d4aa;
+            --accent-red: #ff3b5c;
+            --accent-blue: #4a9eff;
+            --accent-purple: #7c3aed;
+            --accent-yellow: #fbbf24;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 0 40px rgba(102, 126, 234, 0.5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            background: var(--dark-bg);
+            min-height: 100vh;
+            padding: 15px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(74, 158, 255, 0.1) 0%, transparent 50%);
+            animation: galaxyRotate 30s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes galaxyRotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .container {
+            width: 380px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: sticky;
+            top: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .container:hover {
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+
+        .header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 20px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+        }
+
+        .status {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 16px;
+            background: var(--dark-surface);
+            border-bottom: 1px solid var(--dark-border);
+        }
+
+        .status-box {
+            text-align: center;
+            padding: 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .status-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border-color: var(--accent-blue);
+        }
+
+        .status-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-top: 4px;
+            font-size: 1.1rem;
+            font-variant-numeric: tabular-nums;
+            transition: all 0.3s ease;
+        }
+
+        .status-value[id="perdida_maxima"] {
+            color: var(--accent-red);
+            text-shadow: 0 0 20px rgba(255, 59, 92, 0.5);
+        }
+
+        .status-value[id="ganancia_minima"] {
+            color: var(--accent-green);
+            text-shadow: 0 0 20px rgba(0, 212, 170, 0.5);
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--dark-surface);
+            padding: 4px;
+            border-bottom: 1px solid var(--dark-border);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            position: relative;
+            border-radius: 8px;
+        }
+
+        .tab::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--accent-blue);
+            transform: translateX(-50%);
+            transition: width 0.3s ease;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: var(--glass-bg);
+            color: var(--accent-blue);
+            box-shadow: 0 2px 8px rgba(74, 158, 255, 0.3);
+        }
+
+        .tab.active::before {
+            width: 80%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            min-height: 380px;
+            max-height: 420px;
+            overflow-y: auto;
+            background: var(--dark-surface);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Custom Scrollbar */
+        .tab-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .tab-content::-webkit-scrollbar-track {
+            background: var(--dark-surface-2);
+            border-radius: 3px;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb {
+            background: var(--accent-purple);
+            border-radius: 3px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .field input,
+        .field select {
+            padding: 10px 12px;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+            background: rgba(74, 158, 255, 0.1);
+        }
+
+        .field input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 158, 255, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--accent-yellow), #f59e0b);
+            color: var(--dark-bg);
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-red), #dc2626);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 59, 92, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 59, 92, 0.4);
+        }
+
+        .result {
+            background: var(--dark-surface-2);
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert {
+            padding: 10px 16px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            to {
+                left: 100%;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: rgba(0, 212, 170, 0.2);
+            color: var(--accent-green);
+            border: 1px solid rgba(0, 212, 170, 0.3);
+        }
+
+        .alert-warning {
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .alert-danger {
+            background: rgba(255, 59, 92, 0.2);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 59, 92, 0.3);
+        }
+
+        .hedge-strategy {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            color: var(--text-primary);
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 0.8rem;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .hedge-strategy strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--accent-blue);
+        }
+
+        .scenario-box {
+            background: var(--dark-surface-2);
+            border: 2px solid transparent;
+            border-radius: 14px;
+            padding: 16px;
+            margin: 14px 0;
+            font-size: 0.82rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Gradiente de borde animado */
+        .scenario-box::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 14px;
+            z-index: -1;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .scenario-favorable::before {
+            background: linear-gradient(45deg, var(--accent-green), transparent, var(--accent-green));
+            animation: borderRotate 3s linear infinite;
+        }
+
+        .scenario-unfavorable::before {
+            background: linear-gradient(45deg, var(--accent-blue), transparent, var(--accent-blue));
+            animation: borderRotate 3s linear infinite;
+        }
+
+        @keyframes borderRotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .scenario-favorable {
+            background: linear-gradient(135deg,
+                    rgba(0, 212, 170, 0.2) 0%,
+                    rgba(0, 212, 170, 0.05) 50%,
+                    var(--dark-surface-2) 100%);
+            box-shadow: inset 0 0 20px rgba(0, 212, 170, 0.1);
+        }
+
+        .scenario-unfavorable {
+            background: linear-gradient(135deg,
+                    rgba(74, 158, 255, 0.2) 0%,
+                    rgba(74, 158, 255, 0.05) 50%,
+                    var(--dark-surface-2) 100%);
+            box-shadow: inset 0 0 20px rgba(74, 158, 255, 0.1);
+        }
+
+        .scenario-box strong {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .scenario-favorable strong {
+            color: var(--accent-green);
+            text-shadow: 0 0 10px rgba(0, 212, 170, 0.5);
+        }
+
+        .scenario-unfavorable strong {
+            color: var(--accent-blue);
+            text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+        }
+
+        .scenario-box:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .scenario-box:hover::before {
+            opacity: 1;
+        }
+
+        /* Contenido del texto más legible */
+        .scenario-box {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        /* Icono animado */
+        .scenario-box strong::after {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: auto;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .scenario-favorable strong::after {
+            background: var(--accent-green);
+            box-shadow: 0 0 15px var(--accent-green);
+        }
+
+        .scenario-unfavorable strong::after {
+            background: var(--accent-blue);
+            box-shadow: 0 0 15px var(--accent-blue);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .actions .btn {
+            margin-bottom: 0;
+            padding: 10px 8px;
+            font-size: 0.7rem;
+        }
+
+        .crypto-info {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.1), rgba(102, 126, 234, 0.1));
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.7rem;
+            color: var(--accent-blue);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* 🔥 ESTILOS PARA EL MINDSET MODAL */
+        .mindset-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .mindset-content {
+            background: var(--dark-surface);
+            border: 2px solid var(--accent-yellow);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: slideIn 0.3s ease;
+        }
+
+        .mindset-header h3 {
+            color: var(--accent-yellow);
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .mindset-rules {
+            background: var(--dark-surface-2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .rule-item {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+
+        .rule-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .mindset-question {
+            text-align: center;
+            color: var(--accent-blue);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .mindset-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .mindset-actions .btn {
+            flex: 1;
+            margin-bottom: 0;
+            font-size: 0.8rem;
+        }
+
+        /* Management options */
+        .management-options {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 193, 7, 0.1));
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 0.75rem;
+            color: var(--accent-yellow);
+        }
+
+        .management-option {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            padding: 4px 0;
+        }
+
+        .management-option strong {
+            color: var(--text-primary);
+            margin-right: 8px;
+        }
+
+        /* Hedge direction indicator */
+        .hedge-direction-indicator {
+            background: var(--dark-surface-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .hedge-direction-indicator span {
+            color: var(--accent-purple);
+            font-size: 1rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            body {
+                justify-content: center;
+                padding: 10px;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 380px;
+            }
+
+            .tab-content {
+                min-height: 350px;
+                max-height: 380px;
+            }
+
+            .mindset-content {
+                max-width: 350px;
+                margin: 0 10px;
+            }
+        }
+
+        /* Loading Animation for Numbers */
+        @keyframes countUp {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .status-value {
+            animation: countUp 0.5s ease-out;
+        }
+
+        /* Glow Effects */
+        input:focus,
+        select:focus {
+            animation: inputGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes inputGlow {
+            from {
+                box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+            }
+
+            to {
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+            }
+        }
+
+        /* Premium Feel Details */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: var(--primary-gradient);
+            border-radius: 24px;
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+
+        .container:hover::before {
+            opacity: 0.3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Hedge Calculator</h1>
+            <p>Smart Protection v3.0</p>
+        </div>
+
+        <div class="status">
+            <div class="status-box">
+                <div class="status-label">Pérdida Máxima</div>
+                <div class="status-value" id="perdida_maxima">$0</div>
+            </div>
+            <div class="status-box">
+                <div class="status-label">Ganancia Mínima</div>
+                <div class="status-value" id="ganancia_minima">$0</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('setup')">⚙️</button>
+            <button class="tab" onclick="showTab('hedge')">🛡️</button>
+            <button class="tab" onclick="showTab('result')">📊</button>
+        </div>
+
+        <!-- SETUP TAB -->
+        <div id="setup" class="tab-content active">
+            <div class="hedge-strategy">
+                <strong>🎯 ESTRATEGIA HEDGE INTELIGENTE</strong>
+                Protección con management dinámico - Compatible con todas las cryptos
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label>🪙 Símbolo</label>
+                    <input type="text" id="simbolo" placeholder="btc, eth, 1000pepe, sui...">
+                </div>
+                <div class="field">
+                    <label>📊 Dirección Posición</label>
+                    <select id="tipo_position" onchange="updateDynamicLabels()">
+                        <option value="LONG">LONG</option>
+                        <option value="SHORT">SHORT</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label id="label_precio_entrada">📈 Precio Entrada</label>
+                    <input type="number" id="precio_entrada" step="0.000001" placeholder="Precio entrada">
+                </div>
+                <div class="field">
+                    <label>🎯 Take Profit</label>
+                    <input type="number" id="take_profit" step="0.000001" placeholder="Precio objetivo">
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label id="label_lotes">🔢 Lotes Posición</label>
+                    <input type="number" id="lotes" step="0.000001" placeholder="Cantidad lotes">
+                </div>
+                <div class="field">
+                    <label>💰 Ganancia Esperada ($)</label>
+                    <input type="number" id="ganancia_esperada" step="0.01" placeholder="Auto">
+                </div>
+            </div>
+
+            <div class="crypto-info" id="crypto_info" style="display: none;">
+                📊 Crypto detectada: <span id="crypto_name"></span><br>
+                📏 Decimales: <span id="crypto_decimals"></span>
+            </div>
+
+            <button class="btn btn-primary" onclick="calcularGananciaPosition()">📊 Calcular Posición</button>
+        </div>
+
+        <!-- HEDGE TAB -->
+        <div id="hedge" class="tab-content">
+            <div class="hedge-direction-indicator" id="hedge_direction_info">
+                <span>🛡️</span> Hedge será: <span id="hedge_direction_text">SHORT</span>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label>📍 Precio Hedge (Actual)</label>
+                    <input type="number" id="precio_hedge" step="0.000001" placeholder="Precio actual del mercado">
+                </div>
+                <div class="field">
+                    <label id="label_stop_loss_hedge">🛡️ Stop Loss Hedge</label>
+                    <input type="number" id="stop_loss_hedge" step="0.000001" placeholder="Donde cortar pérdidas">
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label id="label_take_profit_hedge">🎯 Take Profit Hedge</label>
+                    <input type="number" id="take_profit_hedge" step="0.000001" placeholder="Objetivo del hedge">
+                </div>
+                <div class="field">
+                    <label>💸 Riesgo Máximo ($)</label>
+                    <input type="number" id="riesgo_maximo" step="0.01" placeholder="Pérdida máxima aceptable">
+                </div>
+            </div>
+
+            <div class="scenario-box scenario-favorable" id="scenario_favorable">
+                <strong id="scenario_favorable_title">📈 ESCENARIO FAVORABLE:</strong>
+                <span id="scenario_favorable_text">Posición llega a TP → Sacrificas hedge, maximizas posición</span>
+            </div>
+
+            <div class="scenario-box scenario-unfavorable" id="scenario_unfavorable">
+                <strong id="scenario_unfavorable_title">📉 ESCENARIO DESFAVORABLE:</strong>
+                <span id="scenario_unfavorable_text">Hedge gana → Management dinámico según momentum</span>
+            </div>
+
+            <div class="management-options">
+                <strong>🧠 MANAGEMENT INTELIGENTE:</strong><br>
+                <div class="management-option">
+                    <strong>Conservador:</strong> <span id="conservative_text">Cierra posición en precio hedge, maximiza
+                        hedge</span>
+                </div>
+                <div class="management-option">
+                    <strong>Agresivo:</strong> <span id="aggressive_text">Cierra hedge en breakeven posición, mantén
+                        posición</span>
+                </div>
+            </div>
+
+            <button class="btn btn-warning" onclick="calcularHedge()">🛡️ Calcular Hedge Inteligente</button>
+        </div>
+
+        <!-- RESULT TAB -->
+        <div id="result" class="tab-content">
+            <div class="result" id="resultado">💡 Configure su posición y luego calcule el hedge inteligente...
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-primary" onclick="copiar()">📋 Copy</button>
+                <button class="btn btn-warning" onclick="enviarTelegram()" id="btnTelegram">📤 Bot</button>
+                <button class="btn btn-danger" onclick="resetear()">🔄 Reset</button>
+            </div>
+        </div>
+
+        <div id="alertas"></div>
+    </div>
+
+    <!-- 🧠 MINDSET REMINDER MODAL -->
+    <div id="hedgeMindsetModal" class="mindset-modal" style="display: none;">
+        <div class="mindset-content">
+            <div class="mindset-header">
+                <h3>⚠️ ANTES DE HEDGE - LEE ESTO</h3>
+            </div>
+
+            <div class="mindset-rules">
+                <div class="rule-item">🛡️ El hedge protege - NO genera profit</div>
+                <div class="rule-item">🚫 NO cerrar por "soportes" o "ganancias"</div>
+                <div class="rule-item">⏰ Solo cerrar: TP hit, SL hit, o 2 semanas máximo</div>
+                <div class="rule-item" id="dynamicRisk">💰 $100 riesgo protege $344 - Vale la pena</div>
+                <div class="rule-item">🧠 Es training para amounts grandes</div>
+            </div>
+
+            <div class="mindset-question">
+                <strong>¿Mantendrás disciplina profesional?</strong>
+            </div>
+
+            <div class="mindset-actions">
+                <button class="btn btn-primary" onclick="confirmHedgeMindset()">✅ Sí - Proceder</button>
+                <button class="btn btn-danger" onclick="closeHedgeMindset()">❌ No - Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let hedgeData = null;
+
+        // 🔥 ACTUALIZAR LABELS DINÁMICAMENTE
+        function updateDynamicLabels() {
+            const tipoPosition = document.getElementById('tipo_position').value;
+            const esLong = tipoPosition === 'LONG';
+
+            // Actualizar dirección del hedge
+            const hedgeDirection = esLong ? 'SHORT' : 'LONG';
+            document.getElementById('hedge_direction_text').textContent = hedgeDirection;
+
+            // Actualizar escenarios
+            const scenarioFavorable = document.getElementById('scenario_favorable');
+            const scenarioDesfavorable = document.getElementById('scenario_unfavorable');
+
+            if (esLong) {
+                document.getElementById('scenario_favorable_title').innerHTML = '📈 ESCENARIO ALCISTA:';
+                document.getElementById('scenario_favorable_text').textContent = 'Long llega a TP → Sacrificas hedge, maximizas long';
+                document.getElementById('scenario_unfavorable_title').innerHTML = '📉 ESCENARIO BAJISTA:';
+                document.getElementById('scenario_unfavorable_text').textContent = 'Short hedge gana → Management dinámico según momentum';
+
+                document.getElementById('conservative_text').textContent = 'Cierra Long en precio hedge, maximiza Short';
+                document.getElementById('aggressive_text').textContent = 'Cierra Short en breakeven Long, mantén posición';
+            } else {
+                document.getElementById('scenario_favorable_title').innerHTML = '📉 ESCENARIO BAJISTA:';
+                document.getElementById('scenario_favorable_text').textContent = 'Short llega a TP → Sacrificas hedge, maximizas short';
+                document.getElementById('scenario_unfavorable_title').innerHTML = '📈 ESCENARIO ALCISTA:';
+                document.getElementById('scenario_unfavorable_text').textContent = 'Long hedge gana → Management dinámico según momentum';
+
+                document.getElementById('conservative_text').textContent = 'Cierra Short en precio hedge, maximiza Long';
+                document.getElementById('aggressive_text').textContent = 'Cierra Long en breakeven Short, mantén posición';
+            }
+        }
+
+        // 🔥 DETECCIÓN AUTOMÁTICA DE CRYPTO Y SUS DECIMALES
+        function detectCryptoDecimals(symbol) {
+            const sym = symbol.toLowerCase();
+
+            if (sym === 'btc') {
+                return { price: 2, lots: 3, name: 'Bitcoin' };
+            } else if (['eth', 'sol', 'bnb', 'avax', 'dot', 'link', 'uni'].includes(sym)) {
+                return { price: 2, lots: 2, name: 'Major Altcoin' };
+            } else if (['1000pepe', '1000bonk', '1000floki', '1000sats'].includes(sym)) {
+                return { price: 6, lots: 0, name: '1000x Token' };
+            } else if (['sui', 'sei', 'apt', 'near', 'inj', 'tia'].includes(sym)) {
+                return { price: 4, lots: 1, name: 'Layer 1 Token' };
+            } else if (['pepe', 'shib', 'doge', 'bonk'].includes(sym)) {
+                return { price: 8, lots: 0, name: 'Meme Token' };
+            } else if (['wif', 'popcat', 'moodeng', 'kaito'].includes(sym)) {
+                return { price: 4, lots: 1, name: 'Mid-cap Token' };
+            } else {
+                return { price: 4, lots: 3, name: 'General Token' };
+            }
+        }
+
+        // Mostrar información de la crypto detectada
+        function showCryptoInfo() {
+            const simbolo = document.getElementById('simbolo').value.trim();
+            if (simbolo) {
+                const cryptoInfo = detectCryptoDecimals(simbolo);
+                document.getElementById('crypto_name').textContent = `${simbolo.toUpperCase()} (${cryptoInfo.name})`;
+                document.getElementById('crypto_decimals').textContent = `Precio: ${cryptoInfo.price}, Lotes: ${cryptoInfo.lots}`;
+                document.getElementById('crypto_info').style.display = 'block';
+            } else {
+                document.getElementById('crypto_info').style.display = 'none';
+            }
+        }
+
+        // Utilidades
+        function formatNumber(num, decimales = 2) {
+            if (isNaN(num)) return "0";
+            return parseFloat(num).toFixed(decimales);
+        }
+
+        function validateNumber(value, min = 0) {
+            const num = parseFloat(value);
+            return !isNaN(num) && num >= min ? num : null;
+        }
+
+        // Navegación de tabs
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Calcular ganancia de la posición
+        function calcularGananciaPosition() {
+            const simbolo = document.getElementById('simbolo').value.trim();
+            const tipoPosition = document.getElementById('tipo_position').value;
+            const precioEntrada = validateNumber(document.getElementById('precio_entrada').value);
+            const takeProfit = validateNumber(document.getElementById('take_profit').value);
+            const lotes = validateNumber(document.getElementById('lotes').value);
+
+            if (!simbolo) {
+                alerta('danger', '❌ Ingrese el símbolo de la crypto');
+                return;
+            }
+
+            if (!precioEntrada || !takeProfit || !lotes) {
+                alerta('danger', '❌ Complete precio entrada, TP y lotes');
+                return;
+            }
+
+            let ganancia;
+            if (tipoPosition === 'LONG') {
+                ganancia = (takeProfit - precioEntrada) * lotes;
+            } else {
+                ganancia = (precioEntrada - takeProfit) * lotes;
+            }
+
+            document.getElementById('ganancia_esperada').value = formatNumber(Math.abs(ganancia), 2);
+
+            showCryptoInfo();
+            alerta('success', `✅ Ganancia calculada: $${formatNumber(Math.abs(ganancia), 2)}`);
+        }
+
+        // 🔥 CALCULAR HEDGE INTELIGENTE - TOTALMENTE DINÁMICO
+        function calcularHedge() {
+            // Datos de la posición original
+            const simbolo = document.getElementById('simbolo').value.trim();
+            const tipoPosition = document.getElementById('tipo_position').value;
+            const precioEntrada = validateNumber(document.getElementById('precio_entrada').value);
+            const takeProfit = validateNumber(document.getElementById('take_profit').value);
+            const lotes = validateNumber(document.getElementById('lotes').value);
+            const gananciaEsperada = validateNumber(document.getElementById('ganancia_esperada').value);
+
+            // Datos del hedge
+            const precioHedge = validateNumber(document.getElementById('precio_hedge').value);
+            const stopLossHedge = validateNumber(document.getElementById('stop_loss_hedge').value);
+            const takeProfitHedge = validateNumber(document.getElementById('take_profit_hedge').value);
+            const riesgoMaximo = validateNumber(document.getElementById('riesgo_maximo').value);
+
+            if (!simbolo || !precioEntrada || !takeProfit || !lotes || !gananciaEsperada) {
+                alerta('danger', '❌ Complete primero los datos de la posición');
+                return;
+            }
+
+            if (!precioHedge || !stopLossHedge || !takeProfitHedge || !riesgoMaximo) {
+                alerta('danger', '❌ Complete todos los campos del Hedge');
+                return;
+            }
+
+            const cryptoInfo = detectCryptoDecimals(simbolo);
+
+            // 🔥 LÓGICA UNIVERSAL
+            const esLong = tipoPosition === 'LONG';
+            const direccionHedge = esLong ? 'SHORT' : 'LONG';
+
+            // 📊 CALCULAR GANANCIA ACTUAL EN PRECIO HEDGE
+            let gananciaActualEnHedge;
+            if (esLong) {
+                gananciaActualEnHedge = (precioHedge - precioEntrada) * lotes;
+            } else {
+                gananciaActualEnHedge = (precioEntrada - precioHedge) * lotes;
+            }
+
+            // 🔥 CÁLCULO DEL TAMAÑO DEL HEDGE
+            const distanciaSL = Math.abs(stopLossHedge - precioHedge);
+            const lotesHedge = riesgoMaximo / distanciaSL;
+
+            // 🔥 ESCENARIO A: POSICIÓN ORIGINAL LLEGA A TP
+            const gananciaTPOriginal = gananciaEsperada;
+            const perdidaHedge = riesgoMaximo;
+            const resultadoFavorable = gananciaTPOriginal - perdidaHedge;
+
+            // 🔥 ESCENARIO B: HEDGE GANA
+            let gananciaHedgeCompleta;
+            if (direccionHedge === 'SHORT') {
+                gananciaHedgeCompleta = (precioHedge - takeProfitHedge) * lotesHedge;
+            } else {
+                gananciaHedgeCompleta = (takeProfitHedge - precioHedge) * lotesHedge;
+            }
+
+            // 💡 MANAGEMENT OPTIONS
+            const resultadoConservador = gananciaHedgeCompleta + gananciaActualEnHedge;
+            const resultadoAgresivo = gananciaHedgeCompleta;
+
+            // 🎯 ANÁLISIS DE CONTROL DE RIESGO
+            const perdidaMaxima = riesgoMaximo;
+            const gananciaMinima = Math.min(resultadoFavorable, resultadoConservador, resultadoAgresivo);
+
+            // Guardar datos del hedge
+            hedgeData = {
+                simbolo: simbolo.toUpperCase(),
+                tipoPosition: tipoPosition,
+                direccionHedge: direccionHedge,
+                lotesHedge: lotesHedge,
+                precioHedge: precioHedge,
+                stopLossHedge: stopLossHedge,
+                takeProfitHedge: takeProfitHedge,
+                riesgoMaximo: riesgoMaximo,
+                perdidaMaxima: perdidaMaxima,
+                gananciaMinima: gananciaMinima,
+                resultadoFavorable: resultadoFavorable,
+                resultadoConservador: resultadoConservador,
+                resultadoAgresivo: resultadoAgresivo,
+                cryptoInfo: cryptoInfo,
+                gananciaHedgeCompleta: gananciaHedgeCompleta,
+                gananciaActualEnHedge: gananciaActualEnHedge,
+                precioEntrada: precioEntrada,
+                gananciaEsperada: gananciaEsperada,
+                lotes: lotes,
+                takeProfit: takeProfit
+            };
+
+            // 🔥 GENERAR RESULTADO UNIVERSAL
+            const escenarioFavorableTexto = esLong ? "ALCISTA" : "BAJISTA";
+            const escenarioDesfavorableTexto = esLong ? "BAJISTA" : "ALCISTA";
+
+            const resultado = `🛡️ HEDGE INTELIGENTE CALCULADO
+
+📊 POSICIÓN ${tipoPosition} ACTUAL:
+${simbolo.toUpperCase()} ${tipoPosition} - ${lotes.toFixed(cryptoInfo.lots)} lotes
+Entrada: $${precioEntrada.toFixed(cryptoInfo.price)}
+TP: $${takeProfit.toFixed(cryptoInfo.price)} (+$${gananciaEsperada})
+Ganancia no realizada: ${gananciaActualEnHedge >= 0 ? '+' : ''}$${gananciaActualEnHedge.toFixed(2)} (en $${precioHedge})
+
+🛡️ HEDGE ${direccionHedge} RECOMENDADO:
+Símbolo: ${simbolo.toUpperCase()}USDT
+Dirección: ${direccionHedge}
+Tamaño: ${lotesHedge.toFixed(cryptoInfo.lots)} lotes
+Entrada: $${precioHedge.toFixed(cryptoInfo.price)}
+SL: $${stopLossHedge.toFixed(cryptoInfo.price)} (-$${riesgoMaximo})
+TP: $${takeProfitHedge.toFixed(cryptoInfo.price)}
+
+📈 ESCENARIO ${escenarioFavorableTexto} (${tipoPosition} llega a TP):
+${tipoPosition}: +$${gananciaEsperada.toFixed(2)} ✅
+${direccionHedge}: -$${perdidaHedge.toFixed(2)} ❌
+RESULTADO: +$${resultadoFavorable.toFixed(2)}
+
+📉 ESCENARIO ${escenarioDesfavorableTexto} - MANAGEMENT OPTIONS:
+
+🎯 CONSERVADOR (Cierra ${tipoPosition} en precio hedge):
+${tipoPosition}: ${gananciaActualEnHedge >= 0 ? '+' : ''}$${gananciaActualEnHedge.toFixed(2)} (cerrar en ${precioHedge}) ✅
+${direccionHedge}: +$${gananciaHedgeCompleta.toFixed(2)} ✅
+RESULTADO: +$${resultadoConservador.toFixed(2)}
+
+🚀 AGRESIVO (Cierra ${direccionHedge} en breakeven ${tipoPosition}):
+${tipoPosition}: $0.00 (vuelve a breakeven - SIGUE VIVO) 🔄
+${direccionHedge}: +$${gananciaHedgeCompleta.toFixed(2)} ✅
+RESULTADO: +$${resultadoAgresivo.toFixed(2)} + ${tipoPosition} position activa
+
+🎛️ CONTROL DE RIESGO:
+💸 Pérdida máxima: $${perdidaMaxima.toFixed(2)}
+💰 Ganancia mínima: $${gananciaMinima.toFixed(2)}
+🎯 R:R Hedge: 1:${formatNumber(gananciaHedgeCompleta / riesgoMaximo, 2)}
+
+🧠 MANAGEMENT INTELIGENTE ACTIVADO
+Tu decides la estrategia según momentum del mercado`;
+
+            document.getElementById('resultado').textContent = resultado;
+
+            // Actualizar status
+            const perdidaElement = document.getElementById('perdida_maxima');
+            const gananciaElement = document.getElementById('ganancia_minima');
+
+            perdidaElement.style.animation = 'none';
+            gananciaElement.style.animation = 'none';
+
+            setTimeout(() => {
+                perdidaElement.textContent = '$' + formatNumber(perdidaMaxima, 0);
+                gananciaElement.textContent = '$' + formatNumber(gananciaMinima, 0);
+                perdidaElement.style.animation = 'countUp 0.5s ease-out';
+                gananciaElement.style.animation = 'countUp 0.5s ease-out';
+            }, 10);
+
+            showTab('result');
+            alerta('success', `✅ Hedge ${direccionHedge} calculado para ${tipoPosition} en ` + simbolo.toUpperCase());
+        }
+
+        // 🧠 FUNCIONES DEL MINDSET REMINDER
+        function showHedgeMindset() {
+            if (hedgeData) {
+                const riskLine = document.getElementById('dynamicRisk');
+                const gananciaProtegida = hedgeData.gananciaMinima || 'N/A';
+                const riesgo = hedgeData.riesgoMaximo || 'N/A';
+
+                riskLine.textContent = `💰 $${riesgo} riesgo protege $${formatNumber(gananciaProtegida, 0)} - Vale la pena`;
+            }
+
+            document.getElementById('hedgeMindsetModal').style.display = 'flex';
+        }
+
+        function closeHedgeMindset() {
+            document.getElementById('hedgeMindsetModal').style.display = 'none';
+            window.pendingHedgeAction = null;
+        }
+
+        function confirmHedgeMindset() {
+            document.getElementById('hedgeMindsetModal').style.display = 'none';
+
+            if (window.pendingHedgeAction) {
+                window.pendingHedgeAction();
+                window.pendingHedgeAction = null;
+            }
+
+            alerta('success', '🧠 Disciplina profesional activada');
+        }
+
+        // Copiar al portapapeles
+        function copiar() {
+            const texto = document.getElementById('resultado').textContent;
+
+            if (texto.includes('Configure su posición')) {
+                alerta('warning', '⚠️ Calcule el hedge primero');
+                return;
+            }
+
+            navigator.clipboard.writeText(texto).then(function () {
+                alerta('success', '✅ Copiado al portapapeles');
+            }).catch(function () {
+                const textArea = document.createElement('textarea');
+                textArea.value = texto;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alerta('success', '✅ Copiado al portapapeles');
+            });
+        }
+
+        // 🔥 ENVIAR A TELEGRAM CON COMANDO DINÁMICO
+        async function enviarTelegram() {
+            if (!hedgeData) {
+                alerta('warning', '⚠️ Calcule el hedge primero');
+                return;
+            }
+
+            window.pendingHedgeAction = executeHedgeTelegram;
+            showHedgeMindset();
+        }
+
+        async function executeHedgeTelegram() {
+            const btn = document.getElementById('btnTelegram');
+            const originalText = btn.innerHTML;
+
+            btn.innerHTML = '<span class="loading"></span>Sending...';
+            btn.disabled = true;
+
+            try {
+                const simboloCompleto = hedgeData.simbolo.endsWith('USDT')
+                    ? hedgeData.simbolo
+                    : `${hedgeData.simbolo}USDT`;
+
+                // 🔥 COMANDO UNIVERSAL - BUY/SELL SEGÚN DIRECCIÓN
+                const comando = hedgeData.direccionHedge === 'LONG' ? 'BUY' : 'SELL';
+                const comandoBot = `${comando} ${simboloCompleto} ${hedgeData.lotesHedge.toFixed(hedgeData.cryptoInfo.lots)} ${hedgeData.precioHedge.toFixed(hedgeData.cryptoInfo.price)} SL:${hedgeData.stopLossHedge.toFixed(hedgeData.cryptoInfo.price)} TP:${hedgeData.takeProfitHedge.toFixed(hedgeData.cryptoInfo.price)}`;
+
+                const botToken = "7582987755:AAFBdNQFZ4McMsJwt60gvTs9CW2XkKZ3OMA";
+                const chatId = "7471012566";
+                const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: comandoBot
+                    })
+                });
+
+                const data = await response.json();
+                if (data.ok) {
+                    alerta('success', '✅ Comando enviado al bot');
+                } else {
+                    throw new Error(data.description || 'Error desconocido');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                try {
+                    const simboloCompleto = hedgeData.simbolo.endsWith('USDT')
+                        ? hedgeData.simbolo
+                        : `${hedgeData.simbolo}USDT`;
+                    const comando = hedgeData.direccionHedge === 'LONG' ? 'BUY' : 'SELL';
+                    const comandoBot = `${comando} ${simboloCompleto} ${hedgeData.lotesHedge.toFixed(hedgeData.cryptoInfo.lots)} ${hedgeData.precioHedge.toFixed(hedgeData.cryptoInfo.price)} SL:${hedgeData.stopLossHedge.toFixed(hedgeData.cryptoInfo.price)} TP:${hedgeData.takeProfitHedge.toFixed(hedgeData.cryptoInfo.price)}`;
+
+                    await navigator.clipboard.writeText(comandoBot);
+                    alerta('warning', '⚠️ Comando copiado - Envía manualmente al bot');
+                } catch (copyError) {
+                    alerta('danger', '❌ Error enviando comando');
+                }
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Resetear calculadora
+        function resetear() {
+            const campos = ['simbolo', 'precio_entrada', 'take_profit', 'lotes',
+                'ganancia_esperada', 'precio_hedge', 'stop_loss_hedge',
+                'take_profit_hedge', 'riesgo_maximo'];
+
+            campos.forEach(campo => {
+                const elemento = document.getElementById(campo);
+                if (elemento) elemento.value = '';
+            });
+
+            document.getElementById('tipo_position').selectedIndex = 0;
+            document.getElementById('resultado').textContent = '💡 Configure su posición y luego calcule el hedge inteligente...';
+            document.getElementById('perdida_maxima').textContent = '$0';
+            document.getElementById('ganancia_minima').textContent = '$0';
+            document.getElementById('crypto_info').style.display = 'none';
+            document.getElementById('alertas').innerHTML = '';
+
+            hedgeData = null;
+            updateDynamicLabels();
+            alerta('success', '✅ Calculadora reseteada');
+        }
+
+        // Sistema de alertas
+        function alerta(tipo, mensaje) {
+            const alertasContainer = document.getElementById('alertas');
+            alertasContainer.innerHTML = '';
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${tipo}`;
+            alertDiv.textContent = mensaje;
+
+            alertasContainer.appendChild(alertDiv);
+
+            if (tipo !== 'danger') {
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.style.opacity = '0';
+                        alertDiv.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            if (alertDiv.parentNode) {
+                                alertDiv.remove();
+                            }
+                        }, 300);
+                    }
+                }, 4000);
+            }
+        }
+
+        // Auto-save en localStorage
+        function guardarDatos() {
+            const datos = {
+                simbolo: document.getElementById('simbolo').value,
+                tipo_position: document.getElementById('tipo_position').value,
+                precio_entrada: document.getElementById('precio_entrada').value,
+                take_profit: document.getElementById('take_profit').value,
+                lotes: document.getElementById('lotes').value,
+                ganancia_esperada: document.getElementById('ganancia_esperada').value,
+                precio_hedge: document.getElementById('precio_hedge').value,
+                stop_loss_hedge: document.getElementById('stop_loss_hedge').value,
+                take_profit_hedge: document.getElementById('take_profit_hedge').value,
+                riesgo_maximo: document.getElementById('riesgo_maximo').value
+            };
+
+            localStorage.setItem('hedgeCalculatorData', JSON.stringify(datos));
+        }
+
+        function cargarDatos() {
+            const datosGuardados = localStorage.getItem('hedgeCalculatorData');
+            if (datosGuardados) {
+                const datos = JSON.parse(datosGuardados);
+
+                Object.keys(datos).forEach(field => {
+                    const element = document.getElementById(field);
+                    if (element && datos[field]) {
+                        element.value = datos[field];
+                    }
+                });
+
+                updateDynamicLabels();
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function () {
+            cargarDatos();
+            updateDynamicLabels();
+
+            // Auto-save
+            document.querySelectorAll('input, select').forEach(element => {
+                element.addEventListener('change', guardarDatos);
+                element.addEventListener('blur', guardarDatos);
+            });
+
+            // Mostrar info de crypto cuando se escriba el símbolo
+            document.getElementById('simbolo').addEventListener('input', showCryptoInfo);
+
+            // Tip inicial con animación
+            setTimeout(() => {
+                if (document.getElementById('resultado').textContent.includes('Configure su posición')) {
+                    alerta('success', '💡 Tip: Ingrese el símbolo de la crypto para empezar');
+                }
+            }, 1500);
+        });
+
+        // Cerrar modal con ESC
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeHedgeMindset();
+            }
+        });
+
+        // Cerrar modal clickeando fuera
+        document.getElementById('hedgeMindsetModal').addEventListener('click', function (event) {
+            if (event.target === this) {
+                closeHedgeMindset();
+            }
+        });
+    </script>
+</body>
+
+</html>
